@@ -16,19 +16,28 @@ def connect(mongodb_name: str) -> MongoClient:
 db = connect('class')
 
 
-def insert(document: dict):
+def insert(collection: str, document: dict):
     '''
-    insert one ducument(dict) into timetable collection
+    insert one ducument(dict) into collection
+    return ObjectId
     '''
-    db.timetable.insert_one(document)
+    return db[collection].insert_one(document).inserted_id
 
 
-def find(query: dict = {}, field: dict = None) -> dict:
+def find(collection: str, query: dict = {}, field: dict = None) -> dict:
     '''
     返回一条符合条件的 document
     '''
     if field is not None:
-        r = db.timetable.find_one(query, field)
+        r = db[collection].find_one(query, field)
     else:
-        r = db.timetable.find_one(query)
+        r = db[collection].find_one(query)
     return r
+
+
+def drop(*collections: str):
+    '''
+    remove all documents
+    '''
+    for c in collections:
+        db[c].drop()
