@@ -1,4 +1,5 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
+from bson.objectid import ObjectId
 
 
 def connect(mongodb_name: str) -> MongoClient:
@@ -24,15 +25,20 @@ def insert(collection: str, document: dict):
     return db[collection].insert_one(document).inserted_id
 
 
-def find(collection: str, query: dict = {}, field: dict = None) -> dict:
+def find(collection: str, query: dict = {}, field: dict = None, mult=False, sort=False):
     '''
     返回一条符合条件的 document
     '''
-    if field is not None:
-        r = db[collection].find_one(query, field)
-    else:
-        r = db[collection].find_one(query)
-    return r
+    args = (query,) if field is None else (query, field)
+    if not mult:
+        return db[collection].find_one(*args)
+    if not sort:
+        return db[collection].find(*args)
+    return db[collection].find(*args).sort(sort, ASCENDING)
+
+
+def find_by_id(collection: str, id: str) -> dict:
+    return db[collection].find_one({"_id": ObjectId(id)})
 
 
 def drop(*collections: str):
