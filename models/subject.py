@@ -58,11 +58,11 @@ class Subject:
         ds = load('static/subjects.json')
         for d in ds:
             obj_id = insert('info', d)
-            # 建立索引表
-            # 格式
+            # 建立索引表, 格式如下
             # i -> 十位: (星期几-1), 个位: (第几节-1)
             # start & end -> 开始 & 结束于第几周
             # place -> 上课地点
+            # week -> 单周上课还是双周
             for tp in d['time_place']:
                 i = week_day_to_num(tp[0]) * 10 + tp[1] - 1
                 insert('timetable', dict(
@@ -119,12 +119,13 @@ class Subject:
         }, mult=True, sort='i'))
 
     @classmethod
-    def real_next(cls, week: int, day: int, class_ordinal: int):
+    def real_next(cls, week: int, day: int, class_ordinal: int) -> dict or None:
         '''
         接收 '下一节课' (星期几-1, 第几节课-1)
         将其转化为 课程排位(数据库索引), 寻找大于等于它的第一个存在
         若不存在, 设课程排位为0, 重新搜索.
-        返回一个 含有课程信息的 dict
+        返回一个 含有课程信息的 dict,
+        如果没课了 返回 None
         '''
         # 转化成课程表时间索引
         i = day * 10 + class_ordinal
@@ -135,8 +136,7 @@ class Subject:
             r = cls.find_by_rankWeek(week+1, 0)
         if len(r) == 0:
             # 啊, 下周还是没课? 那应该是没有课了吧~
-            # todo
-            pass
+            return None
         obj_id = r[0].get('info')
         return find_by_id('info', obj_id)
 
