@@ -1,5 +1,5 @@
 # import pdir
-from utils.time import now
+from utils.time import now, pretty_now
 # def log(o):
 #     '''
 #     接收一个 object, 打印出来

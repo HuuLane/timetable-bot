@@ -25,6 +25,15 @@ def now() -> tuple:
     return w, t.tm_wday, t.tm_hour, t.tm_min
 
 
+week_cn = ('一', '二', '三', '四', '五', '六', '天')
+
+
+def pretty_now(now: tuple) -> tuple:
+    h = str(now[2]).zfill(2)
+    m = str(now[3]).zfill(2)
+    return now[0], week_cn[now[1]], h, m
+
+
 if __name__ == "__main__":
     n = now()
     print(n)
