@@ -58,14 +58,19 @@ class Subject:
         ds = load('static/subjects.json')
         for d in ds:
             obj_id = insert('info', d)
-            # 建立时间索引
-            # 格式为 十位: (星期几-1), 个位: (第几节-1)
+            # 建立索引表
+            # 格式
+            # i -> 十位: (星期几-1), 个位: (第几节-1)
+            # start & end -> 开始 & 结束于第几周
+            # place -> 上课地点
             for tp in d['time_place']:
                 i = week_day_to_num(tp[0]) * 10 + tp[1] - 1
                 insert('timetable', dict(
                     i=i,
                     start=d['span'][0],
                     end=d['span'][1],
+                    place=tp[2],
+                    week=tp[3] if 3 < len(tp) else "每周",
                     info=str(obj_id),
                 ))
 
@@ -105,10 +110,12 @@ class Subject:
         '''
         功能见 real_next
         '''
+        week = "双周" if w % 2 == 0 else "单周"
         return list(find('timetable', {
             'i': {"$gte": i, },
             "start": {"$lte": w},
-            "end": {"$gte": w}
+            "end": {"$gte": w},
+            "$or": [{"week": week}, {"week": "每周"}],
         }, mult=True, sort='i'))
 
     @classmethod
