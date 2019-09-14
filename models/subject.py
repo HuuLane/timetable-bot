@@ -2,7 +2,7 @@ import json
 from models.mongo import insert, find, drop, find_by_id
 
 
-def load(path):
+def load(path) -> list:
     """
     从一个文件中载入数据并转化为 list
     """
@@ -64,6 +64,8 @@ class Subject:
                 i = week_day_to_num(tp[0]) * 10 + tp[1] - 1
                 insert('timetable', dict(
                     i=i,
+                    start=d['span'][0],
+                    end=d['span'][1],
                     info=str(obj_id),
                 ))
 
@@ -99,22 +101,18 @@ class Subject:
         return day, class_ordinal
 
     @classmethod
-    def find_by_rank(cls, i) -> list:
+    def find_by_rankWeek(cls, w: int, i: int) -> list:
         '''
         功能见 real_next
         '''
-        r = list(find('timetable', {
-            'i': {"$gte": i}
+        return list(find('timetable', {
+            'i': {"$gte": i, },
+            "start": {"$lte": w},
+            "end": {"$gte": w}
         }, mult=True, sort='i'))
-        if len(r) == 0:
-            r = list(find('timetable', {
-                'i': {"$gte": 0}
-            }, mult=True, sort='i'))
-        obj_id = r[0].get('info')
-        return find_by_id('info', obj_id)
 
     @classmethod
-    def real_next(cls, day: int, class_ordinal: int):
+    def real_next(cls, week: int, day: int, class_ordinal: int):
         '''
         接收 '下一节课' (星期几-1, 第几节课-1)
         将其转化为 课程排位(数据库索引), 寻找大于等于它的第一个存在
@@ -124,7 +122,16 @@ class Subject:
         # 转化成课程表时间索引
         i = day * 10 + class_ordinal
         print('课程排位', i)
-        return cls.find_by_rank(i)
+        r = cls.find_by_rankWeek(week, i)
+        if len(r) == 0:
+            # 说明是下一周啦~
+            r = cls.find_by_rankWeek(week+1, 0)
+        if len(r) == 0:
+            # 啊, 下周还是没课? 那应该是没有课了吧~
+            # todo
+            pass
+        obj_id = r[0].get('info')
+        return find_by_id('info', obj_id)
 
     @classmethod
     def next(cls, time: tuple):
@@ -135,7 +142,7 @@ class Subject:
         # 现在时分
         clock = time[2] * 100 + time[3]
         f = cls.fake_next(time[1], clock)
-        return cls.real_next(*f)
+        return cls.real_next(time[0], *f)
 
     @classmethod
     def all(cls) -> list:
