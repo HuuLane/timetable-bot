@@ -3,8 +3,8 @@ from templates import render
 from utils import *
 from models import Subject
 
-# @on_command('课表', aliases=('查课'))
-@on_command('下节课')
+
+@on_command('下节课', aliases=('查课', '课表'), only_to_me=False)
 async def curriculum(session: CommandSession):
     pattern = session.get('pattern')
     # 根据参数, 生成响应信息
@@ -44,7 +44,7 @@ async def course(pattern: str) -> str:
             now=pretty_now(n),
             info=info,
             week=next_class.week,
-            day=day_num_to_cn(int(next_class.day)),
+            day=day_num_to_cn(int(next_class.day)-1),
             class_ordinal=next_class.class_ordinal,
         )
         return render('next_verbose', **args)
