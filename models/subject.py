@@ -1,6 +1,6 @@
 import json
 from models.mongo import insert, find, drop, find_by_id
-from utils import log, delkey
+from utils import *
 
 
 def load(path) -> list:
@@ -30,23 +30,106 @@ def week_day_to_num(day: str) -> int:
     return d.get(day, 0)
 
 
+def find_by_rankWeek(w: int, i: int) -> list:
+    '''
+    功能见 _real_next
+    '''
+    week = "双周" if w % 2 == 0 else "单周"
+    return list(find('timetable', {
+        'i': {"$gte": i, },
+        "start": {"$lte": w},
+        "end": {"$gte": w},
+        "$or": [{"week": week}, {"week": "每周"}],
+    }, mult=True, sort='i'))
+
+
+schooltime_cache = []
+
+
+def schooltime() -> list:
+    r = schooltime_cache
+    if len(r) > 0:
+        return r
+    # 第一次运行, 载入到内存
+    d = list(filter(lambda d: d.get('title', None) ==
+                    "夏季", load('static/routine.json')))[0]
+    r = d.get('schooltime')
+    _schooltime = r
+    return r
+
+
 class Subject:
-    _schooltime = []
-
-    def __init__(self, **kwargs):
+    def __init__(self, time: tuple):
         '''
-        格式:
-        name(课程名) -> 统一建模语言uml
-        teacher -> xx
-        time_place(时间地点) -> [['Mon.', 3, 'a301'], ['Wed.', 2, 'a301']]
-        span(哪几周) -> {'start': 1, 'end': 12}
+        参数 time: 第几周/(星期几-1)/时/分
         '''
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        self.week = time[0]
+        self.day = time[1]
+        self.clock = time[2] * 100 + time[3]
+        self.class_ordinal = 0
+        self.info = self.__getinfo()
 
-    def info(self):
-        for k, v in self.__dict__.items():
-            print(f'{k} -> {v}')
+    def __fake_next(self) -> tuple:
+        '''
+        假设课程全满, 求出下一节课, 是今天第几节课或明天第一节课\n
+        返回 (星期几-1), (第几节课-1)
+        '''
+        day, clock = self.day, self.clock
+
+        class_ordinal = 0
+        for i, t in enumerate(schooltime()):
+            if clock < t:
+                class_ordinal = i
+                break
+        else:
+            # 返回下一个工作日的第一节课..
+            day = day + 1
+            # 礼拜六或礼拜天就改为礼拜一, 周数加一
+            if (day + 1) == 6 or 7:
+                self.week += 1
+                day = 0
+        return day, class_ordinal
+
+    def __real_next(self, day: int, class_ordinal: int):
+        '''
+        接收 '下一节课' (星期几-1, 第几节课-1)
+        将其转化为 课程排位(数据库索引), 寻找大于等于它的第一个存在
+        若不存在, 设课程排位为0, 重新搜索.
+        返回一个 含有课程信息的 dict,
+        如果没课了 返回 None
+        '''
+        week = self.week
+        # 转化成课程表时间索引
+        i = day * 10 + class_ordinal
+        print('课程排位', i)
+        r = find_by_rankWeek(week, i)
+        if len(r) == 0:
+            # 说明是下一周啦~
+            self.week += 1
+            r = find_by_rankWeek(self.week, 0)
+        if len(r) == 0:
+            # 啊, 下周还是没课? 那应该是没有课了吧~
+            return None
+        # 取出 排位, 写回 self
+        rank_index = r[0].get('i')
+        self.day, self.class_ordinal = str(rank_index + 11)
+        # 取出 info id, 以及上课地点
+        obj_id = r[0].get('info')
+        place = r[0].get('place')
+        info = find_by_id('info', obj_id)
+        # clear 一些没用的 items
+        useless = ("time_place", "span", "_id")
+        delkey(info, *useless)
+        info["place"] = place
+        return info
+
+    def __getinfo(self):
+        '''
+        返回下一节课的 info
+        '''
+        # 先得出理想情况下的下一节课, 然后求真实的
+        fake = self.__fake_next()
+        return self.__real_next(*fake)
 
     @classmethod
     def update(cls):
@@ -74,99 +157,3 @@ class Subject:
                     week=tp[3] if 3 < len(tp) else "每周",
                     info=str(obj_id),
                 ))
-
-    @classmethod
-    def schooltime(cls) -> list:
-        r = cls._schooltime
-        if len(r) > 0:
-            return r
-        # 第一次运行, 载入到内存
-        d = list(filter(lambda d: d.get('title', None) ==
-                        "夏季", load('static/routine.json')))[0]
-        r = d.get('schooltime')
-        cls._schooltime = r
-        return r
-
-    @classmethod
-    def fake_next(cls, day, clock) -> tuple:
-        '''
-        假设课程全满, 求出下一节课, 是今天第几节课或明天第一节课\n
-        返回 (星期几-1), (第几节课-1)
-        '''
-        class_ordinal = 0
-        for i, t in enumerate(cls.schooltime()):
-            if clock < t:
-                class_ordinal = i
-                break
-        else:
-            # 返回下一个工作日的第一节课..
-            day = day + 1
-            # 礼拜六或礼拜天就改为礼拜一
-            if (day + 1) == 6 or 7:
-                day = 0
-        return day, class_ordinal
-
-    @classmethod
-    def find_by_rankWeek(cls, w: int, i: int) -> list:
-        '''
-        功能见 real_next
-        '''
-        week = "双周" if w % 2 == 0 else "单周"
-        return list(find('timetable', {
-            'i': {"$gte": i, },
-            "start": {"$lte": w},
-            "end": {"$gte": w},
-            "$or": [{"week": week}, {"week": "每周"}],
-        }, mult=True, sort='i'))
-
-    @classmethod
-    def real_next(cls, week: int, day: int, class_ordinal: int) -> dict or None:
-        '''
-        接收 '下一节课' (星期几-1, 第几节课-1)
-        将其转化为 课程排位(数据库索引), 寻找大于等于它的第一个存在
-        若不存在, 设课程排位为0, 重新搜索.
-        返回一个 含有课程信息的 dict,
-        如果没课了 返回 None
-        '''
-        # 转化成课程表时间索引
-        i = day * 10 + class_ordinal
-        print('课程排位', i)
-        r = cls.find_by_rankWeek(week, i)
-        if len(r) == 0:
-            # 说明是下一周啦~
-            r = cls.find_by_rankWeek(week+1, 0)
-        if len(r) == 0:
-            # 啊, 下周还是没课? 那应该是没有课了吧~
-            return None
-        # 取出 info id, 以及上课地点
-        obj_id = r[0].get('info')
-        place = r[0].get('place')
-        info = find_by_id('info', obj_id)
-        # clear 一些没用的 items
-        useless = ("time_place", "span", "_id")
-        delkey(info, *useless)
-        info["place"] = place
-        return info
-
-    @classmethod
-    def next(cls, time: tuple):
-        '''
-        返回下一节课的 info
-        参数 time: 第几周/(星期几-1)/时/分
-        '''
-        # 现在时分
-        week = time[0]
-        day = time[1]
-        clock = time[2] * 100 + time[3]
-        # 先得出理想情况下的下一节课, 然后求真实的
-        f = cls.fake_next(day, clock)
-        return cls.real_next(week, *f)
-
-    @classmethod
-    def all(cls) -> list:
-        '''
-        返回一个 list, 里面是所有实例化的课程
-        '''
-        modules = load('static/subjects.json')
-        subjects = [cls(**m) for m in modules]
-        return subjects
