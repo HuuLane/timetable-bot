@@ -1,5 +1,6 @@
 import json
 from models.mongo import insert, find, drop, find_by_id
+from utils import log, delkey
 
 
 def load(path) -> list:
@@ -137,19 +138,29 @@ class Subject:
         if len(r) == 0:
             # 啊, 下周还是没课? 那应该是没有课了吧~
             return None
+        # 取出 info id, 以及上课地点
         obj_id = r[0].get('info')
-        return find_by_id('info', obj_id)
+        place = r[0].get('place')
+        info = find_by_id('info', obj_id)
+        # clear 一些没用的 items
+        useless = ("time_place", "span", "_id")
+        delkey(info, *useless)
+        info["place"] = place
+        return info
 
     @classmethod
     def next(cls, time: tuple):
         '''
-        查看下一节课
+        返回下一节课的 info
         参数 time: 第几周/(星期几-1)/时/分
         '''
         # 现在时分
+        week = time[0]
+        day = time[1]
         clock = time[2] * 100 + time[3]
-        f = cls.fake_next(time[1], clock)
-        return cls.real_next(time[0], *f)
+        # 先得出理想情况下的下一节课, 然后求真实的
+        f = cls.fake_next(day, clock)
+        return cls.real_next(week, *f)
 
     @classmethod
     def all(cls) -> list:

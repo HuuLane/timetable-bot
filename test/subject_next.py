@@ -20,7 +20,7 @@ test_data = [
     (13, 5-1, 8, 20),
 ]
 
-
+'''
 def benchmark():
     for d in test_data:
         s = Subject.next(d)
@@ -36,5 +36,10 @@ def benchmark():
             f'{s.get("name")}\n'\
             f'**********************************'
         print(r)
+'''
 
-# def ():
+
+def benchmark():
+    for d in test_data:
+        s = Subject.next(d)
+        print(s)
