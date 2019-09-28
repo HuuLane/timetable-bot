@@ -1,5 +1,11 @@
+{%- if debug -%}
+在 debug, 信息不准确喔!
+{%- endif -%}
 现在是第 {{ now[0] }} 周, 星期{{ now[1] }}
 北京时间 {{ now[2] }}:{{ now[3] }}
+{%- if now_course is not none %}
+正在进行中: {{ now_course.name }} - {{ now_course.place }}
+{% endif %}
 
 下节课: {{ info["name"] }}
 时间: 第 {{ week }} 周, 星期{{day}}, 第 {{class_ordinal}} 节

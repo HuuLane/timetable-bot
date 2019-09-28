@@ -36,6 +36,10 @@ async def _(session: CommandSession):
 
 async def course(pattern: str) -> str:
     log('有人查课啦~', pattern)
-    t = Timetable()
-    log('t.__dict__: ', t.__dict__)
-    return render('human-friendly', now=Timetable.schooltime(), **t.__dict__)
+    t = Timetable().__dict__
+    t.update(dict(
+        debug=False,
+        now=Timetable.schooltime(),
+        now_course=Timetable.now(),
+    ))
+    return render('human-friendly',  **t)
