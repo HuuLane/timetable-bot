@@ -184,6 +184,11 @@ class Timetable:
                     return cls.query_info(c)
 
     @classmethod
+    def schooltime(cls, time=None):
+        t = time if time is not None else now()
+        return pretty_now(t)
+
+    @classmethod
     def debug(cls):
         log('info:', collection('info'))
         log('timetable:', collection('timetable'))

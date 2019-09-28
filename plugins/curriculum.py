@@ -3,6 +3,11 @@ from templates import render
 from utils import *
 import Timetable
 
+Timetable.load(**dict(
+    subjects='./static/subjects.json',
+    routine='./static/routine.json',
+))
+
 
 @on_command('下节课', aliases=('查课', '课表'), only_to_me=False)
 async def curriculum(session: CommandSession):
@@ -30,12 +35,7 @@ async def _(session: CommandSession):
 
 
 async def course(pattern: str) -> str:
-    log('有人查课啦~')
+    log('有人查课啦~', pattern)
     t = Timetable()
-    if pattern is None:
-        # 不啰嗦
-        pass
-    elif '啰嗦' in pattern:
-        # 啰嗦
-        # return render('next_verbose', **args)
-        pass
+    log('t.__dict__: ', t.__dict__)
+    return render('human-friendly', now=Timetable.schooltime(), **t.__dict__)
