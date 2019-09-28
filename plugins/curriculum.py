@@ -1,7 +1,7 @@
 from nonebot import on_command, CommandSession
 from templates import render
 from utils import *
-from models import Subject
+import Timetable
 
 
 @on_command('下节课', aliases=('查课', '课表'), only_to_me=False)
@@ -30,21 +30,12 @@ async def _(session: CommandSession):
 
 
 async def course(pattern: str) -> str:
-    n = now()
-    print('有人查课啦~ now', n)
-    next_class = Subject(n)
-    info = next_class.info
-    print('info:', info)
-    if info is None:
-        return '恭喜本学期完课啦~~'
+    log('有人查课啦~')
+    t = Timetable()
     if pattern is None:
-        return f'{info["name"]}, 地点: {info["place"]}'
+        # 不啰嗦
+        pass
     elif '啰嗦' in pattern:
-        args = dict(
-            now=pretty_now(n),
-            info=info,
-            week=next_class.week,
-            day=day_num_to_cn(int(next_class.day)-1),
-            class_ordinal=next_class.class_ordinal,
-        )
-        return render('next_verbose', **args)
+        # 啰嗦
+        # return render('next_verbose', **args)
+        pass
