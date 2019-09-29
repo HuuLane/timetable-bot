@@ -23,6 +23,11 @@ async def cet(session: CommandSession):
 async def cet_info() -> str:
     # time remaining
     r = CET46()
-    if r > 0:
-        pass
-    return f'剩余 {r} 天!'
+    if r < 0:
+        return f'等着查分吧..'
+    elif r == 0:
+        return f'成败在此一举! 上!'
+    elif r == 1:
+        return f'就在明日'
+    else:
+        return f'剩余 {r} 天'
