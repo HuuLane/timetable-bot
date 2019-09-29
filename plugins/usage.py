@@ -9,7 +9,7 @@ def plugin_list(plugins):
     return '\n'.join(sorted(ns, key=len))
 
 
-@on_command('usage', aliases=['查看帮助', '帮助'])
+@on_command('usage', aliases=['查看帮助', '帮助'], only_to_me=False)
 async def usage(session: CommandSession):
     # 获取设置了名称的插件列表
     plugins = list(filter(lambda p: p.name, nonebot.get_loaded_plugins()))
