@@ -3,16 +3,15 @@ import nonebot
 import config
 
 
-def run_bot():
-    nonebot.init(config)
-    # say & echo
-    # nonebot.load_builtin_plugins()
-    nonebot.load_plugins(
-        path.join(path.dirname(__file__), 'plugins'),
-        'plugins'
-    )
-    nonebot.run()
+nonebot.init(config)
+nonebot.load_plugins(
+    path.join(path.dirname(__file__), 'plugins'),
+    'plugins'
+)
 
+bot = nonebot.get_bot()
+app = bot.asgi
 
-if __name__ == '__main__':
-    run_bot()
+# run the bot!
+# hypercorn bot:app
+bot.run()
