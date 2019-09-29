@@ -127,3 +127,5 @@ dmypy.json
 static
 # config.py
 test.py
+# feedback
+templates/feedback.jinja
