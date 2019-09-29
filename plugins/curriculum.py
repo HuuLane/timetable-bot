@@ -3,6 +3,15 @@ from templates import render
 from utils import *
 import Timetable
 
+__plugin_name__ = '查课'
+__plugin_usage__ = r'''
+查看下节课的信息
+
+直接输入 **查课** 就行!
+
+(＠_＠;) 啊
+'''
+
 Timetable.load(**dict(
     subjects='./static/subjects.json',
     routine='./static/routine.json',
