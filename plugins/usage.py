@@ -9,19 +9,22 @@ def plugin_list(plugins):
     return '\n'.join(sorted(ns, key=len))
 
 
-@on_command('usage', aliases=['查看帮助', '帮助'], only_to_me=False)
+@on_command('usage', aliases=['查看帮助', '帮助'])
 async def usage(session: CommandSession):
     # 获取设置了名称的插件列表
     plugins = list(filter(lambda p: p.name, nonebot.get_loaded_plugins()))
 
     # 从会话状态（session.state）中获取 arg，如果当前不存在，则询问用户
-    prompt = '目前支持的功能有：\n\n' + plugin_list(plugins) + '\n\n回复查看命令说明'
+    prompt = '目前支持的命令有：\n\n' + plugin_list(plugins) + '\n\n回复查看命令说明'
     arg = session.get('arg', prompt=prompt)
 
     # 如果发了参数则发送相应命令的使用帮助
     for p in plugins:
         if arg in p.name.lower():
             await session.send(p.usage)
+            return
+        elif arg == '帮助':
+            await session.send('帮助就是帮助咯')
             return
     else:
         await session.send('没有这条命令呀..')

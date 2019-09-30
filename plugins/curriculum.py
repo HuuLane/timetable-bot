@@ -18,7 +18,7 @@ Timetable.load(**dict(
 ))
 
 
-@on_command('下节课', aliases=('查课', '课表'), only_to_me=False)
+@on_command('下节课', aliases=('查课', '课表'))
 async def curriculum(session: CommandSession):
     pattern = session.get('pattern')
     # 根据参数, 生成响应信息

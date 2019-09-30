@@ -12,7 +12,7 @@ w(ﾟДﾟ)w 啊? 有 BUG 吗???
 '''
 
 
-@on_command('反馈', aliases=('feedback', ), only_to_me=False)
+@on_command('反馈', aliases=('feedback', ))
 async def _(session: CommandSession):
     res = render('feedback')
     await session.send(res)

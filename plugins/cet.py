@@ -13,7 +13,7 @@ w(ﾟДﾟ)w 啊? 就这几天啦???
 '''
 
 
-@on_command('四六级', aliases=('四级', '六级', 'cet'), only_to_me=False)
+@on_command('四六级', aliases=('四级', '六级', 'cet'))
 async def cet(session: CommandSession):
     # 根据参数, 生成响应信息
     res = await cet_info()
